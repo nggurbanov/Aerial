@@ -34,18 +34,29 @@ jobs:
             xcodebuild -version
           } | tee build/artifacts/BUILD-INFO.txt
 
-      - name: Build app and extension and run tests
+      # Xcode's app-hosted test runner can fail to connect when its build
+      # lives under a project-relative DerivedData path. Use its default
+      # location for Debug tests; Release packaging has its own directory.
+      - name: Build app, extension and test bundle
         run: |
-          xcodebuild test \
+          xcodebuild build-for-testing \
             -project Aerial.xcodeproj -scheme Aerial \
             -configuration Debug -destination 'platform=macOS,arch=arm64' \
-            -derivedDataPath build/Debug \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= \
+            PROVISIONING_PROFILE_SPECIFIER= \
+            2>&1 | tee build/debug-build.log | xcbeautify --disable-colored-output
+
+      - name: Run unit tests
+        timeout-minutes: 8
+        run: |
+          xcodebuild test-without-building \
+            -project Aerial.xcodeproj -scheme Aerial \
+            -configuration Debug -destination 'platform=macOS,arch=arm64' \
             -resultBundlePath build/TestResults.xcresult \
             -parallel-testing-enabled NO \
             CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= \
             PROVISIONING_PROFILE_SPECIFIER= \
-            > build/test.log 2>&1 || { tail -n 120 build/test.log; exit 1; }
-          tail -n 35 build/test.log
+            2>&1 | tee build/test.log | xcbeautify --disable-colored-output
 
       - name: Build release app
         run: |
