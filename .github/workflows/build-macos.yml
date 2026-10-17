@@ -58,6 +58,16 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER= \
             2>&1 | tee build/test.log | xcbeautify --disable-colored-output
 
+      - name: Export test summary and diagnostics
+        if: always()
+        run: |
+          if [[ -d build/TestResults.xcresult ]]; then
+            xcrun xcresulttool get test-results summary --path build/TestResults.xcresult \
+              > build/test-summary.json || true
+            xcrun xcresulttool export diagnostics --path build/TestResults.xcresult \
+              --output-path build/test-diagnostics || true
+          fi
+
       - name: Build release app
         run: |
           xcodebuild build \
@@ -72,7 +82,7 @@ jobs:
       - name: Verify and package personal test build
         run: |
           app=build/Release/Build/Products/Release/Aerial.app
-          test -d "$app/Contents/PlugIns/Aerial4WallpaperExtension.appex"
+          test -d "$app/Contents/Extensions/Aerial4WallpaperExtension.appex"
           codesign --verify --deep --strict --verbose=2 "$app"
           codesign -d --verbose=2 "$app" 2>&1 | tee -a build/artifacts/BUILD-INFO.txt
           echo 'Personal ad-hoc-signed build. Not notarized. On-device notch verification pending.' \
@@ -97,5 +107,7 @@ jobs:
           path: |
             build/*.log
             build/TestResults.xcresult
+            build/test-summary.json
+            build/test-diagnostics/
           if-no-files-found: ignore
           retention-days: 7
