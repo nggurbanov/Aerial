@@ -15,6 +15,26 @@ struct NotchMaskTests {
         #expect(rect == CGRect(x: 0, y: 950, width: 1512, height: 32))
     }
 
+    @Test("Strip reaches the menu-bar boundary when it extends below the notch")
+    func fullMenuBarHeight() {
+        let macBook = CGSize(width: 1470, height: 956)
+        #expect(NotchMaskGeometry.frame(screenSize: macBook, topInset: 32, menuBarHeight: 33,
+                                       destinationSize: macBook, contentsScale: 2)
+                == CGRect(x: 0, y: 923, width: 1470, height: 33))
+    }
+
+    @Test("Menu-bar height alone never masks a display without a notch")
+    func unnotchedMenuBar() {
+        #expect(NotchMaskGeometry.frame(screenSize: screen, topInset: 0, menuBarHeight: 24,
+                                       destinationSize: screen, contentsScale: 2) == nil)
+    }
+
+    @Test("Hidden menu bar still covers the physical notch")
+    func hiddenMenuBar() {
+        #expect(NotchMaskGeometry.frame(screenSize: screen, topInset: 32, menuBarHeight: 0,
+                                       destinationSize: screen, contentsScale: 2)?.height == 32)
+    }
+
     @Test("Displays without a notch are unchanged")
     func noNotch() {
         #expect(NotchMaskGeometry.frame(screenSize: screen, topInset: 0,

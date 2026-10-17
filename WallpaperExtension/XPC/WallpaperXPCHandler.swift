@@ -1786,10 +1786,17 @@ func refreshNotchMask(for wallpaper: ActiveWallpaper, wid: String) {
             ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID)
                 == wallpaper.displayID
         }
+        // Companion relays live menu-bar geometry: NSScreen's visible
+        // frame is cached in the extension. Fall back for cold acquires
+        // before the first relay, and retain the physical safe-area floor.
+        let relayedTop = screenUUID(for: wallpaper.displayID).flatMap {
+            WallpaperControlListener.shared.currentDockInsets[$0]?.first
+        }
         let frame = screen.flatMap { screen in
             NotchMaskGeometry.frame(
                 screenSize: screen.frame.size,
                 topInset: screen.safeAreaInsets.top,
+                menuBarHeight: CGFloat(relayedTop ?? Double(max(0, screen.frame.maxY - screen.visibleFrame.maxY))),
                 destinationSize: wallpaper.lastDestination.size,
                 contentsScale: wallpaper.lastDestination.scaleFactor,
                 isGeometryFlipped: wallpaper.rootLayer.isGeometryFlipped
