@@ -11,6 +11,7 @@ struct DisplaysSettingsPanel: View {
     @State private var displayMode: DisplayMode = .allDisplays
     @State private var viewingMode: ViewingMode = .independent
     @State private var aspectMode: AspectMode = .fill
+    @State private var hideNotch = false
     @State private var horizontalMargin: Double = 0
     @State private var verticalMargin: Double = 0
     @State private var displayMarginsAdvanced: Bool = false
@@ -173,6 +174,19 @@ struct DisplaysSettingsPanel: View {
                         displayViewRefresh = UUID()
                         WallpaperControl.shared.displaysConfigDidChange()
                     }
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Toggle("Hide notch", isOn: $hideNotch)
+                        .onChange(of: hideNotch) { newValue in
+                            PrefsDisplays.hideNotch = newValue
+                            WallpaperControl.shared.displaysConfigDidChange()
+                        }
+                    Text("Adds a black strip across the top of displays with a notch, in both wallpaper and screensaver mode.")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
                 }
             }
             .padding(12)
@@ -360,6 +374,7 @@ struct DisplaysSettingsPanel: View {
         displayMode = PrefsDisplays.displayMode
         viewingMode = PrefsDisplays.viewingMode
         aspectMode = PrefsDisplays.aspectMode
+        hideNotch = PrefsDisplays.hideNotch
         horizontalMargin = PrefsDisplays.horizontalMargin
         verticalMargin = PrefsDisplays.verticalMargin
         displayMarginsAdvanced = PrefsDisplays.displayMarginsAdvanced

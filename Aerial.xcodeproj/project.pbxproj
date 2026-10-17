@@ -400,6 +400,11 @@
 		F0WSM00042F30000000000001 /* WallpaperStatusMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0WSM00012F30000000000001 /* WallpaperStatusMonitor.swift */; };
 		F0WST00042F30000000000001 /* WallpaperStatusState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0WST00012F30000000000001 /* WallpaperStatusState.swift */; };
 		F0WST00062F30000000000001 /* WallpaperStatusState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0WST00012F30000000000001 /* WallpaperStatusState.swift */; };
+		AABBCC001122334455660001 /* NotchMaskGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBCC001122334455660003 /* NotchMaskGeometry.swift */; };
+		AABBCC001122334455660002 /* NotchMaskGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBCC001122334455660003 /* NotchMaskGeometry.swift */; };
+		AABBCC001122334455660004 /* NotchMaskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBCC001122334455660005 /* NotchMaskTests.swift */; };
+		AABBCC001122334455660006 /* NotchMaskLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBCC001122334455660008 /* NotchMaskLayer.swift */; };
+		AABBCC001122334455660007 /* NotchMaskLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBCC001122334455660008 /* NotchMaskLayer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -758,6 +763,9 @@
 		F0WSM00012F30000000000001 /* WallpaperStatusMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallpaperStatusMonitor.swift; sourceTree = "<group>"; };
 		F0WST00012F30000000000001 /* WallpaperStatusState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallpaperStatusState.swift; sourceTree = "<group>"; };
 		F0RG350EA31A4E182A341AA0 /* Aerial.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Aerial.entitlements; sourceTree = "<group>"; };
+		AABBCC001122334455660003 /* NotchMaskGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchMaskGeometry.swift; sourceTree = "<group>"; };
+		AABBCC001122334455660005 /* NotchMaskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchMaskTests.swift; sourceTree = "<group>"; };
+		AABBCC001122334455660008 /* NotchMaskLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchMaskLayer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1372,6 +1380,8 @@
 				F0C060992E4F70580066F2C4 /* DisplayDetection.swift */,
 				F0DOK0002F30000000000001 /* DockInfo.swift */,
 				F0SPG0012F30000000000001 /* SpannedGeometry.swift */,
+				AABBCC001122334455660003 /* NotchMaskGeometry.swift */,
+				AABBCC001122334455660008 /* NotchMaskLayer.swift */,
 				F0SDR0012F30000000000001 /* SaverDisplayRule.swift */,
 			);
 			path = Hardware;
@@ -1511,6 +1521,7 @@
 				F0PWT0012F30000000000001 /* PumpWatchdogPolicyTests.swift */,
 				F0BST0012F30000000000001 /* BoundedSyncTests.swift */,
 				F0GST0012F30000000000001 /* GeometrySanitizerTests.swift */,
+				AABBCC001122334455660005 /* NotchMaskTests.swift */,
 				F0VOT0012F30000000000001 /* VideoOrientationTests.swift */,
 				F0SDT0012F30000000000001 /* SaverDetectionTests.swift */,
 				F0SDR1012F30000000000001 /* SaverDisplayRuleTests.swift */,
@@ -1772,6 +1783,8 @@
 				F0PBM0022F30000000000001 /* PlaybackMath.swift in Sources */,
 				F0C0611A2E4F70580066F2C4 /* DisplayDetection.swift in Sources */,
 				F0SPG0022F30000000000001 /* SpannedGeometry.swift in Sources */,
+				AABBCC001122334455660001 /* NotchMaskGeometry.swift in Sources */,
+				AABBCC001122334455660006 /* NotchMaskLayer.swift in Sources */,
 				F0SDR0022F30000000000001 /* SaverDisplayRule.swift in Sources */,
 				F0PRG0032F30000000000001 /* PresentingRing.swift in Sources */,
 				F0BSY0032F30000000000001 /* BoundedSync.swift in Sources */,
@@ -1987,6 +2000,7 @@
 				F0TST00C2F30000000000001 /* SpannedGeometryTests.swift in Sources */,
 				F0TST00E2F30000000000001 /* PresentingRingTests.swift in Sources */,
 				F0GST0022F30000000000001 /* GeometrySanitizerTests.swift in Sources */,
+				AABBCC001122334455660004 /* NotchMaskTests.swift in Sources */,
 				F0VOT0022F30000000000001 /* VideoOrientationTests.swift in Sources */,
 				F0SDT0022F30000000000001 /* SaverDetectionTests.swift in Sources */,
 				F0SDR1022F30000000000001 /* SaverDisplayRuleTests.swift in Sources */,
@@ -2072,6 +2086,8 @@
 				F0WPX0B72F30000000000001 /* PrefsAdvanced.swift in Sources */,
 				F0WPX0B82F30000000000001 /* DisplayDetection.swift in Sources */,
 				F0SPG0032F30000000000001 /* SpannedGeometry.swift in Sources */,
+				AABBCC001122334455660002 /* NotchMaskGeometry.swift in Sources */,
+				AABBCC001122334455660007 /* NotchMaskLayer.swift in Sources */,
 				F0SDR0032F30000000000001 /* SaverDisplayRule.swift in Sources */,
 				F0WPX0B92F30000000000001 /* DarkMode.swift in Sources */,
 				F0WPX0BA2F30000000000001 /* ExtensionHelpers.swift in Sources */,

@@ -83,6 +83,12 @@ struct PrefsDisplays {
         }
     }
 
+    /// One preference for both wallpaper and screensaver presentation.
+    static var hideNotch: Bool {
+        get { manager.getValue(forKeyPath: \.displays.hideNotch) }
+        set { manager.setValue(newValue, forKeyPath: \.displays.hideNotch) }
+    }
+
     // Display margins
     static var displayMarginsAdvanced: Bool {
         get { manager.getValue(forKeyPath: \.displays.displayMarginsAdvanced) }

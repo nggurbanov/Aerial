@@ -1,0 +1,146 @@
+import Testing
+import Foundation
+import CoreGraphics
+import QuartzCore
+@testable import Aerial
+
+@Suite("Notch mask")
+struct NotchMaskTests {
+    private let screen = CGSize(width: 1512, height: 982)
+
+    @Test("Notched display gets a full-width top strip in points")
+    func notchedDisplay() {
+        let rect = NotchMaskGeometry.frame(screenSize: screen, topInset: 32,
+                                          destinationSize: screen, contentsScale: 2)
+        #expect(rect == CGRect(x: 0, y: 950, width: 1512, height: 32))
+    }
+
+    @Test("Displays without a notch are unchanged")
+    func noNotch() {
+        #expect(NotchMaskGeometry.frame(screenSize: screen, topInset: 0,
+                                       destinationSize: screen, contentsScale: 2) == nil)
+    }
+
+    @Test("Preview geometry scales with the destination and rounds out to pixels")
+    func scaledPreview() throws {
+        let rect = try #require(NotchMaskGeometry.frame(
+            screenSize: screen, topInset: 32,
+            destinationSize: CGSize(width: 378, height: 245.5), contentsScale: 2))
+        #expect(rect == CGRect(x: 0, y: 237.5, width: 378, height: 8))
+        let fractional = try #require(NotchMaskGeometry.frame(
+            screenSize: screen, topInset: 32,
+            destinationSize: CGSize(width: 400, height: 260), contentsScale: 2))
+        #expect(fractional.height == 8.5)
+        #expect(fractional.maxY == 260)
+    }
+
+    @Test("Flipped layer coordinates still place the strip at the top")
+    func flippedCoordinates() {
+        #expect(NotchMaskGeometry.frame(screenSize: screen, topInset: 32,
+                                       destinationSize: screen, contentsScale: 2,
+                                       isGeometryFlipped: true)?.minY == 0)
+    }
+
+    @Test("Invalid display geometry produces no mask", arguments: [CGFloat.nan, .infinity, -.infinity, -1, 0])
+    func invalidGeometry(value: CGFloat) {
+        #expect(NotchMaskGeometry.frame(screenSize: CGSize(width: value, height: 982), topInset: 32,
+                                       destinationSize: screen, contentsScale: 2) == nil)
+        #expect(NotchMaskGeometry.frame(screenSize: screen, topInset: value,
+                                       destinationSize: screen, contentsScale: 2) == nil)
+        #expect(NotchMaskGeometry.frame(screenSize: screen, topInset: 32,
+                                       destinationSize: CGSize(width: 1512, height: value), contentsScale: 2) == nil)
+        #expect(NotchMaskGeometry.frame(screenSize: screen, topInset: 32,
+                                       destinationSize: screen, contentsScale: value) == nil)
+    }
+
+    @Test("An inset covering the whole display is rejected")
+    func invalidInset() {
+        #expect(NotchMaskGeometry.frame(screenSize: screen, topInset: 982,
+                                       destinationSize: screen, contentsScale: 2) == nil)
+    }
+
+    @Test("Legacy settings without hideNotch retain existing display preferences")
+    func legacySettings() throws {
+        var original = ScreensaverSettings.default
+        original.displays.intViewingMode = 2
+        original.displays.horizontalMargin = 5
+        original.displaysDesktop.intAspectMode = 1
+        let data = try JSONEncoder().encode(original)
+        var json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        for key in ["displays", "displaysDesktop"] {
+            var display = try #require(json[key] as? [String: Any])
+            display.removeValue(forKey: "hideNotch")
+            json[key] = display
+        }
+        let decoded = try JSONDecoder().decode(ScreensaverSettings.self,
+                                               from: JSONSerialization.data(withJSONObject: json))
+        #expect(!decoded.displays.hideNotch)
+        #expect(!decoded.displaysDesktop.hideNotch)
+        #expect(decoded.displays.intViewingMode == 2)
+        #expect(decoded.displays.horizontalMargin == 5)
+        #expect(decoded.displaysDesktop.intAspectMode == 1)
+    }
+
+    @Test("Enabled notch setting survives a full settings round trip")
+    func enabledRoundTrip() throws {
+        var settings = ScreensaverSettings.default
+        settings.displays.hideNotch = true
+        let decoded = try JSONDecoder().decode(ScreensaverSettings.self,
+                                               from: JSONEncoder().encode(settings))
+        #expect(decoded.displays.hideNotch)
+    }
+
+    @Test("Mask stays above content and is reused, resized and removed")
+    @MainActor
+    func layerLifecycle() throws {
+        let root = CALayer()
+        root.frame = CGRect(x: 0, y: 0, width: 100, height: 100)
+        root.backgroundColor = CGColor(gray: 1, alpha: 1)
+        let overlay = CALayer()
+        overlay.frame = root.bounds
+        overlay.backgroundColor = CGColor(gray: 1, alpha: 1)
+        root.addSublayer(overlay)
+        let frame = CGRect(x: 0, y: 90, width: 100, height: 10)
+        let mask = try #require(NotchMaskLayer.update(existing: nil, rootLayer: root,
+                                                     frame: frame, contentsScale: 2))
+        #expect(mask.frame == frame)
+        #expect(mask.superlayer === root)
+        #expect(mask.zPosition > overlay.zPosition)
+        #expect(mask.backgroundColor == CGColor(gray: 0, alpha: 1))
+        let context = try #require(CGContext(data: nil, width: 100, height: 100,
+                                            bitsPerComponent: 8, bytesPerRow: 400,
+                                            space: CGColorSpaceCreateDeviceRGB(),
+                                            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        root.render(in: context)
+        let pixels = try #require(context.data).assumingMemoryBound(to: UInt8.self)
+        var black = 0
+        var white = 0
+        for index in 0..<10_000 {
+            let offset = index * 4
+            if pixels[offset] == 0 && pixels[offset + 1] == 0 && pixels[offset + 2] == 0 {
+                black += 1
+            } else if pixels[offset] == 255 && pixels[offset + 1] == 255 && pixels[offset + 2] == 255 {
+                white += 1
+            }
+        }
+        #expect(black == 1_000)
+        #expect(white == 9_000)
+        // CALayer.render(in:) flattens sublayers in tree order, so test
+        // late-overlay compositor stacking through zPosition separately.
+        let laterOverlay = CALayer()
+        laterOverlay.frame = root.bounds
+        laterOverlay.backgroundColor = overlay.backgroundColor
+        root.addSublayer(laterOverlay)
+        #expect(mask.zPosition > laterOverlay.zPosition)
+        let resized = CGRect(x: 0, y: 180, width: 200, height: 20)
+        #expect(NotchMaskLayer.update(existing: mask, rootLayer: root,
+                                     frame: resized, contentsScale: 1) === mask)
+        #expect(mask.frame == resized)
+        #expect(root.sublayers?.count == 3)
+        #expect(NotchMaskLayer.update(existing: mask, rootLayer: root,
+                                     frame: nil, contentsScale: 1) == nil)
+        #expect(mask.superlayer == nil)
+        #expect(root.sublayers?.count == 2)
+    }
+
+}

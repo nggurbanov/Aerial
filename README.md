@@ -8,6 +8,14 @@ The Apple TV screensaver for your mac, now with optional wallpaper continuity. W
 
 Check-out the website for more info : [aerialscreensaver.github.io](https://aerialscreensaver.github.io)
 
+## Hide notch (this fork)
+
+Enable **Settings → Displays → Hide notch** to draw an opaque black strip
+across the top of notched displays, in both live wallpaper and screensaver
+mode. The strip uses the display's macOS safe-area inset, covers the video
+without resizing it, and stays visible independently of clock/text overlays.
+Displays without a notch are unchanged. The setting is off by default.
+
 ## Requirements
 
 - macOS 26 (Tahoe) or later.
