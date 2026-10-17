@@ -32,6 +32,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )))
     }
     
+    /// Hosted tests need an AppKit run loop, not background services,
+    /// updater UI, activation-policy changes or instance replacement.
+    private var isTestHost: Bool {
+        let environment = ProcessInfo.processInfo.environment
+        return environment["XCTestConfigurationFilePath"] != nil
+            || environment["XCTestBundlePath"] != nil
+    }
+
     // MARK: - Lifecycle
 
     /// Earliest hook: the Dock presentation switches the LSUIElement app
@@ -39,10 +47,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// and main menu come up cleanly (doing it later needs an activation
     /// bounce). Verified forwarded by the SwiftUI adaptor via the log line.
     func applicationWillFinishLaunching(_ notification: Notification) {
+        guard !isTestHost else { return }
         presentation.applyLaunchPolicy(phase: "willFinishLaunching")
     }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        guard !isTestHost else { return }
         // Launch Apple event inspection must precede anything that spins
         // the run loop; the policy call is a no-op when the earlier hook
         // already ran.
@@ -57,14 +67,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // any writer. (Deliberately NOT LSMultipleInstancesProhibited:
         // that would make the new launch fail instead of replace.)
         terminateOlderInstances()
-
-        // App-hosted unit tests (XCTest injects into this process): never
-        // block on modal onboarding UI, and don't present windows.
-        let isTestHost = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-        if isTestHost {
-            continueStartup()
-            return
-        }
 
         // Migration + first-launch wizard are now consolidated into a
         // single window — `FirstLaunchWizardView` starts on a Welcome
