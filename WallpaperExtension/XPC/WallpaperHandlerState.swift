@@ -83,6 +83,9 @@ final class ActiveWallpaper: @unchecked Sendable {
     /// config / no layout for this screen).
     var overlayDriver: OverlayRenderingDriver?
 
+    /// Main-actor owned, independent of overlay/login visibility.
+    var notchMaskLayer: CALayer?
+
     /// Last presentationMode the agent told us. Used to detect lock
     /// transitions and decide whether to ramp the policy change.
     var lastPresentationMode: String = "default"

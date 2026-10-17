@@ -143,6 +143,10 @@ struct WallpaperControlState: Codable, Equatable {
     /// publishes here.
     var dockInsets: [String: [Double]] = [:]
 
+    /// Live screen geometry for notch masking, keyed by stable screen UUID.
+    /// Empty for control files written before notch masking was introduced.
+    var notchMaskScreens: [String: NotchMaskGeometry.Screen] = [:]
+
     /// Bumped by Companion when the NSScreen layout (display ids +
     /// frames) changed on a screen-parameter event — a monitor added,
     /// removed, or rearranged. The extension re-detects displays and
@@ -229,6 +233,8 @@ extension WallpaperControlState {
             ?? WallpaperTransitionStyle.zoomFade.rawValue
         transitionDuration = try c.decodeIfPresent(Double.self, forKey: .transitionDuration) ?? 2.0
         dockInsets = try c.decodeIfPresent([String: [Double]].self, forKey: .dockInsets) ?? [:]
+        notchMaskScreens = try c.decodeIfPresent([String: NotchMaskGeometry.Screen].self,
+                                               forKey: .notchMaskScreens) ?? [:]
         screenLayoutGeneration = try c.decodeIfPresent(Int.self, forKey: .screenLayoutGeneration) ?? 0
         saverSettingsGeneration = try c.decodeIfPresent(Int.self, forKey: .saverSettingsGeneration) ?? 0
         timeSettingsGeneration = try c.decodeIfPresent(Int.self, forKey: .timeSettingsGeneration) ?? 0

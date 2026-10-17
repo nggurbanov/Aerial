@@ -137,6 +137,13 @@ final class WallpaperControlListener: @unchecked Sendable {
         return lastApplied.dockInsets
     }
 
+    /// Notch geometry measured by Companion, including displays without a
+    /// notch so moving a destination to one removes an existing strip.
+    var currentNotchMaskScreens: [String: NotchMaskGeometry.Screen] {
+        lock.lock(); defer { lock.unlock() }
+        return lastApplied.notchMaskScreens
+    }
+
     /// Screen UUIDs auto-paused (window coverage) per the last-applied
     /// control state. Read by the status reporter for the dashboard echo.
     func autoPausedScreens() -> [String] {
@@ -248,6 +255,9 @@ final class WallpaperControlListener: @unchecked Sendable {
                 camera: state.cameraPaused
             )
         }
+        for (wid, wallpaper) in sharedHandlerState.allWallpapers() {
+            refreshNotchMask(for: wallpaper, wid: wid)
+        }
         reassertAudioOwnership(context: "rebaseline")
     }
 
@@ -355,6 +365,12 @@ final class WallpaperControlListener: @unchecked Sendable {
             // The same event also means the display set/arrangement
             // may have changed — re-slice spanned windows if it did.
             refreshTopologyAndResliceIfChanged(reason: "screen-params")
+        }
+
+        if next.notchMaskScreens != prev.notchMaskScreens {
+            for (wid, wallpaper) in sharedHandlerState.allWallpapers() {
+                refreshNotchMask(for: wallpaper, wid: wid)
+            }
         }
 
         // 2. Per-screen counters. We iterate the UNION so a screen

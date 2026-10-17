@@ -117,6 +117,7 @@ final class WallpaperControl: @unchecked Sendable {
     private func publishDockInsets() {
         var insets: [String: [Double]] = [:]
         var layout: [String] = []
+        var notchScreens: [String: NotchMaskGeometry.Screen] = [:]
         for screen in NSScreen.screens {
             guard let did = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID,
                   let cfUUID = CGDisplayCreateUUIDFromDisplayID(did)?.takeRetainedValue() else { continue }
@@ -124,6 +125,9 @@ final class WallpaperControl: @unchecked Sendable {
             let e = DockInfo.detect(for: screen).swiftUIInsets
             insets[uuid] = [Double(e.top), Double(e.leading), Double(e.bottom), Double(e.trailing)]
             let f = screen.frame
+            notchScreens[uuid] = NotchMaskGeometry.Screen(
+                size: f.size, topInset: screen.safeAreaInsets.top, menuBarHeight: e.top
+            )
             layout.append("\(did):\(Int(f.minX)),\(Int(f.minY)),\(Int(f.width)),\(Int(f.height))@\(screen.backingScaleFactor)")
         }
         // Display set / arrangement relay: the appex can't observe
@@ -137,6 +141,10 @@ final class WallpaperControl: @unchecked Sendable {
             var changed = false
             if state.dockInsets != insets {
                 state.dockInsets = insets
+                changed = true
+            }
+            if state.notchMaskScreens != notchScreens {
+                state.notchMaskScreens = notchScreens
                 changed = true
             }
             if layoutChanged {

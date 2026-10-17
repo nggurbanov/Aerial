@@ -1776,6 +1776,42 @@ func switchSharedRenderer(key: String, to selection: PlaybackSelection, playlist
     }
 }
 
+/// Resolve NSScreen and update the static mask on main. Read the latest
+/// destination/settings after the hop: a queued acquire may already have
+/// moved, been invalidated, or had the toggle switched off.
+func refreshNotchMask(for wallpaper: ActiveWallpaper, wid: String) {
+    Task { @MainActor in
+        guard sharedHandlerState.get(wallpaperID: wid) === wallpaper else { return }
+        let relayed = screenUUID(for: wallpaper.displayID).flatMap {
+            WallpaperControlListener.shared.currentNotchMaskScreens[$0]
+        }
+        // Cold-start fallback when Companion has not published geometry.
+        // Prefer the relay as a whole: mixing fresh menu-bar height with a
+        // cached screen size gives the wrong ratio after resolution changes.
+        let geometry = relayed ?? NSScreen.screens.first {
+            ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID)
+                == wallpaper.displayID
+        }.map { screen in
+            NotchMaskGeometry.Screen(
+                size: screen.frame.size, topInset: screen.safeAreaInsets.top,
+                menuBarHeight: max(0, screen.frame.maxY - screen.visibleFrame.maxY)
+            )
+        }
+        let frame = geometry?.maskFrame(
+            destinationSize: wallpaper.lastDestination.size,
+            contentsScale: wallpaper.lastDestination.scaleFactor,
+            isGeometryFlipped: wallpaper.rootLayer.isGeometryFlipped
+        )
+        let enabled = PrefsDisplays.hideNotch && !wallpaper.saverExcluded
+        wallpaper.notchMaskLayer = NotchMaskLayer.update(
+            existing: wallpaper.notchMaskLayer,
+            rootLayer: wallpaper.rootLayer,
+            frame: enabled ? frame : nil,
+            contentsScale: wallpaper.lastDestination.scaleFactor
+        )
+    }
+}
+
 /// Re-key and re-layout every active wallpaper after a displays-settings
 /// change (viewing mode / display mode / aspect / margins). WallpaperAgent
 /// never re-acquires for OUR settings, so this is the only path by which
@@ -1796,6 +1832,7 @@ func reconfigureAllWallpapers() {
     }
 
     for (wid, wallpaper) in sharedHandlerState.allWallpapers() {
+        refreshNotchMask(for: wallpaper, wid: wid)
         if wallpaper.saverExcluded {
             debugLog("  reconfigure: wid=\(wid.prefix(8)) excluded by the saver display selection — left black")
             continue
@@ -1868,6 +1905,11 @@ private let topologyLock = OSAllocatedUnfairLock<String?>(initialState: nil)
 /// no-op; the first call in a process just seeds the signature.
 @discardableResult
 func refreshTopologyAndResliceIfChanged(reason: String) -> Bool {
+    // The extension does not receive AppKit screen-change notifications;
+    // Companion relays them here, including for non-spanned displays.
+    for (wid, wallpaper) in sharedHandlerState.allWallpapers() {
+        refreshNotchMask(for: wallpaper, wid: wid)
+    }
     let resliced: Int? = topologyLock.withLock { last -> Int? in
         let detection = DisplayDetection.sharedInstance
         detection.detectDisplays()
@@ -2401,6 +2443,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
             wallpaper.saverExcluded = saverExcluded
             sharedHandlerState.store(wallpaperID: wid, wallpaper: wallpaper)
             applyDiagnosticBadge(to: wallpaper, wid: wid)
+            refreshNotchMask(for: wallpaper, wid: wid)
 
             // 6b. Overlay driver — fully async, post-park. Overlays are
             //     cosmetic (1 Hz) and the driver's initial SwiftUI
@@ -2779,6 +2822,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
                         wallpaper.rootLayer.contentsScale = new.scaleFactor
                     }
                     wallpaper.noVideoFallback?.resize(to: new.size, contentsScale: new.scaleFactor)
+                    refreshNotchMask(for: wallpaper, wid: wid)
                     // Variant D: the presenter's display link is bound
                     // to the OLD displayID — rebuild it against the new
                     // one. Fresh renderer lookup: a dest-move re-key

@@ -255,6 +255,9 @@ struct DisplaySettings: Codable {
     var intViewingMode: Int
     var intAspectMode: Int
 
+    /// Shared by wallpaper and screensaver; absent in older settings files.
+    var hideNotch: Bool = false
+
     // Margins
     var displayMarginsAdvanced: Bool
     var horizontalMargin: Double
@@ -270,6 +273,20 @@ struct DisplaySettings: Codable {
         verticalMargin: 0,
         advancedMargins: ""
     )
+}
+
+extension DisplaySettings {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        intDisplayMode = try container.decode(Int.self, forKey: .intDisplayMode)
+        intViewingMode = try container.decode(Int.self, forKey: .intViewingMode)
+        intAspectMode = try container.decode(Int.self, forKey: .intAspectMode)
+        hideNotch = try container.decodeIfPresent(Bool.self, forKey: .hideNotch) ?? false
+        displayMarginsAdvanced = try container.decode(Bool.self, forKey: .displayMarginsAdvanced)
+        horizontalMargin = try container.decode(Double.self, forKey: .horizontalMargin)
+        verticalMargin = try container.decode(Double.self, forKey: .verticalMargin)
+        advancedMargins = try container.decode(String.self, forKey: .advancedMargins)
+    }
 }
 
 // MARK: - Time Settings
